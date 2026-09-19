@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <!--
   Copyright 2026 [Your Name/Company Name]
 
@@ -14,11 +13,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
+<!DOCTYPE html>
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>香港即時交通 (城巴/九巴/港鐵/輕鐵)</title>
+    
     <!-- iOS Web App Icons & Settings -->
     <link rel="apple-touch-icon" sizes="180x180" href="Atouch.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -35,7 +36,6 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* 自訂動畫 */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -89,8 +89,8 @@
                     <p class="text-[10px] text-white opacity-90 font-medium">巴士、港鐵及輕鐵即時數據</p>
                 </div>
             </div>
-            <button id="homeBtn" class="p-2 bg-black bg-opacity-20 hover:bg-opacity-30 rounded-full transition-colors hidden">
-                <i data-lucide="home" class="w-5 h-5"></i>
+            <button id="refreshBtn" class="p-2 bg-black bg-opacity-20 hover:bg-opacity-30 rounded-full transition-colors hidden">
+                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
             </button>
         </div>
     </header>
@@ -99,57 +99,47 @@
     <main class="flex-grow flex flex-col max-w-3xl mx-auto w-full p-4 relative" id="appContent">
         
         <!-- 初始狀態 -->
-        <div id="initialState" class="flex flex-col items-center justify-center flex-grow text-center fade-in mt-12">
-            <div class="bg-blue-100 p-6 rounded-full mb-6 text-blue-600">
-                <i data-lucide="map-pin" class="w-12 h-12"></i>
+        <div id="initialState" class="flex flex-col items-center justify-center flex-grow text-center fade-in mt-6 pb-12">
+            <div class="bg-blue-100 p-5 rounded-full mb-4 text-blue-600">
+                <i data-lucide="map-pin" class="w-10 h-10"></i>
             </div>
-            <h2 class="text-2xl font-bold mb-2 text-gray-800">附近車站與即時到站</h2>
-            <p class="text-gray-500 mb-8 max-w-sm text-sm">請允許存取您的位置，以取得附近的巴士、港鐵及輕鐵即時數據。</p>
-            <button id="locateBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-full shadow-lg transition-colors flex items-center gap-2 text-lg">
+            <h2 class="text-2xl font-bold mb-2 text-gray-800">尋找附近車站</h2>
+            <p class="text-gray-500 mb-6 max-w-sm text-sm">請允許存取您的位置，以取得城巴、九巴、港鐵及輕鐵的即時到站時間。</p>
+            <button id="locateBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-full shadow-lg transition-colors flex items-center gap-2 text-lg">
                 <i data-lucide="navigation"></i>
                 <span>定位我的位置</span>
             </button>
             <div id="locationError" class="text-red-500 mt-4 text-sm hidden font-medium bg-red-50 p-3 rounded-lg border border-red-100"></div>
 
             <!-- 分隔線 -->
-            <div class="w-full max-w-sm flex items-center gap-4 my-8">
+            <div class="w-full max-w-sm flex items-center gap-4 my-6">
                 <div class="h-px bg-gray-300 flex-grow"></div>
-                <span class="text-gray-400 text-sm font-medium">或</span>
-                <div class="h-px bg-gray-300 flex-grow"></div>
-            </div>
-            
-            <!-- 路線搜尋 -->
-            <div class="w-full max-w-sm flex flex-col gap-2">
-                <label class="text-sm font-bold text-gray-700 text-left pl-1">搜尋巴士路線</label>
-                <div class="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden bg-white focus-within:border-blue-500 transition-colors shadow-sm">
-                    <div class="pl-3 text-gray-400">
-                        <i data-lucide="bus" class="w-5 h-5"></i>
-                    </div>
-                    <input type="text" id="routeInput" placeholder="巴士 Number (例: 968, 1X)" class="w-full px-3 py-3 outline-none text-gray-700 font-bold uppercase" />
-                    <button id="searchRouteBtn" class="bg-blue-600 hover:bg-blue-700 px-5 py-3 text-white font-semibold transition-colors flex items-center gap-1">
-                        <span>搜尋</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- 分隔線 -->
-            <div class="w-full max-w-sm flex items-center gap-4 my-8">
-                <div class="h-px bg-gray-300 flex-grow"></div>
-                <span class="text-gray-400 text-sm font-medium">或快速查詢</span>
+                <span class="text-gray-400 text-sm font-medium">或快速查詢輕鐵站</span>
                 <div class="h-px bg-gray-300 flex-grow"></div>
             </div>
             
-            <!-- 輕鐵快捷鍵 -->
-            <div class="w-full max-w-sm flex flex-col gap-3">
-                <label class="text-sm font-bold text-gray-700 text-left pl-1">常用輕鐵站</label>
-                <div class="flex gap-3">
-                    <button id="btnSamShing" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-2 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2">
-                        <i data-lucide="tram-front" class="w-5 h-5"></i>
-                        <span>輕鐵三聖</span>
+            <!-- 輕鐵快捷按鈕 (含三聖、兆麟、屯門、澤豐、銀圍) -->
+            <div class="w-full max-w-sm flex flex-col gap-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btnSamShing" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 px-2 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 text-sm">
+                        <i data-lucide="tram-front" class="w-4 h-4"></i>
+                        <span>輕鐵三聖 (920)</span>
                     </button>
-                    <button id="btnSiuLun" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-2 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2">
-                        <i data-lucide="tram-front" class="w-5 h-5"></i>
-                        <span>輕鐵兆麟</span>
+                    <button id="btnSiuLun" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 px-2 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 text-sm">
+                        <i data-lucide="tram-front" class="w-4 h-4"></i>
+                        <span>輕鐵兆麟 (265)</span>
+                    </button>
+                    <button id="btnTuenMun" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 px-2 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 text-sm">
+                        <i data-lucide="tram-front" class="w-4 h-4"></i>
+                        <span>輕鐵屯門 (295)</span>
+                    </button>
+                    <button id="btnAffluence" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 px-2 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 text-sm">
+                        <i data-lucide="tram-front" class="w-4 h-4"></i>
+                        <span>輕鐵澤豐 (80)</span>
+                    </button>
+                    <button id="btnNganWai" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 px-2 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 text-sm col-span-2">
+                        <i data-lucide="tram-front" class="w-4 h-4"></i>
+                        <span>輕鐵銀圍 (230)</span>
                     </button>
                 </div>
             </div>
@@ -422,11 +412,12 @@
             loading: document.getElementById('loadingState'),
             results: document.getElementById('resultsState'),
             locateBtn: document.getElementById('locateBtn'),
-            homeBtn: document.getElementById('homeBtn'),
-            routeInput: document.getElementById('routeInput'),
-            searchRouteBtn: document.getElementById('searchRouteBtn'),
+            refreshBtn: document.getElementById('refreshBtn'),
             btnSamShing: document.getElementById('btnSamShing'),
             btnSiuLun: document.getElementById('btnSiuLun'),
+            btnTuenMun: document.getElementById('btnTuenMun'),
+            btnAffluence: document.getElementById('btnAffluence'),
+            btnNganWai: document.getElementById('btnNganWai'),
             error: document.getElementById('locationError'),
             loadingText: document.getElementById('loadingText'),
             loadingSubText: document.getElementById('loadingSubText'),
@@ -455,33 +446,31 @@
         });
 
         UI.locateBtn.addEventListener('click', initFlow);
-        UI.homeBtn.addEventListener('click', () => {
+        UI.refreshBtn.addEventListener('click', () => {
             userLocation = null; 
-            UI.results.classList.add('hidden');
-            UI.error.classList.add('hidden');
-            UI.initial.classList.remove('hidden');
-            UI.homeBtn.classList.add('hidden');
-            UI.routeInput.value = '';
-            if (map && window.routeLine) {
-                map.removeLayer(window.routeLine);
-                window.routeLine = null;
-            }
+            initFlow();
         });
-        
-        UI.routeInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') searchRoute();
-        });
-        UI.searchRouteBtn.addEventListener('click', searchRoute);
 
-        // 輕鐵快捷按鈕事件 (三聖 ID: 920, 兆麟 ID: 265)
+        // 輕鐵快捷按鈕事件
         UI.btnSamShing.addEventListener('click', () => {
             const staData = LRT_STATIONS["920"];
             openLiveETA({ agency: 'lrt', sta: '920', name_tc: staData.tc, name_en: staData.en });
         });
-
         UI.btnSiuLun.addEventListener('click', () => {
             const staData = LRT_STATIONS["265"];
             openLiveETA({ agency: 'lrt', sta: '265', name_tc: staData.tc, name_en: staData.en });
+        });
+        UI.btnTuenMun.addEventListener('click', () => {
+            const staData = LRT_STATIONS["295"];
+            openLiveETA({ agency: 'lrt', sta: '295', name_tc: staData.tc, name_en: staData.en });
+        });
+        UI.btnAffluence.addEventListener('click', () => {
+            const staData = LRT_STATIONS["80"];
+            openLiveETA({ agency: 'lrt', sta: '80', name_tc: staData.tc, name_en: staData.en });
+        });
+        UI.btnNganWai.addEventListener('click', () => {
+            const staData = LRT_STATIONS["230"];
+            openLiveETA({ agency: 'lrt', sta: '230', name_tc: staData.tc, name_en: staData.en });
         });
 
         UI.closeModal.addEventListener('click', () => UI.modal.classList.add('hidden'));
@@ -526,187 +515,28 @@
             );
         }
 
-        async function ensureStopsDataLoaded() {
-            if (kmbStopsData && ctbStopsData) return;
-            
-            let kmbReq = fetchWithTimeout('https://data.etabus.gov.hk/v1/transport/kmb/stop')
-                .then(res => res.json())
-                .then(data => data.data.map(s => ({...s, agency: 'kmb'})))
-                .catch(err => { console.error("KMB error", err); return []; });
-
-            let ctbReq = fetchWithTimeout('https://rt.data.gov.hk/v2/transport/citybus/stop')
-                .then(res => res.json())
-                .then(data => data.data.map(s => ({...s, agency: 'ctb'})))
-                .catch(err => { console.error("CTB error", err); return []; });
-
-            let [kmbRes, ctbRes] = await Promise.all([kmbReq, ctbReq]);
-            kmbStopsData = kmbRes;
-            ctbStopsData = ctbRes;
-        }
-
-        async function searchRoute() {
-            const route = UI.routeInput.value.trim().toUpperCase();
-            if (!route) return;
-
-            UI.initial.classList.add('hidden');
-            UI.error.classList.add('hidden');
-            showLoading(`正在搜尋路線 ${route}...`, "取得車站列表");
-
-            try {
-                await ensureStopsDataLoaded();
-
-                // Fetch Route-Stop mappings from both operators in parallel
-                const kOut = await fetchWithTimeout(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/outbound/1`).then(res => res.json()).catch(() => null);
-                const kIn = await fetchWithTimeout(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/inbound/1`).then(res => res.json()).catch(() => null);
-                const cOut = await fetchWithTimeout(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/route-stop/ctb/${route}/outbound`).then(res => res.json()).catch(() => null);
-                const cIn = await fetchWithTimeout(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/route-stop/ctb/${route}/inbound`).then(res => res.json()).catch(() => null);
-
-                let routeStops = [];
-
-                const processStops = (res, agency, dirText) => {
-                    if (res && res.data && res.data.length > 0) {
-                        const db = agency === 'kmb' ? kmbStopsData : ctbStopsData;
-                        res.data.forEach(item => {
-                            const stopInfo = db.find(s => s.stop === item.stop);
-                            if (stopInfo) {
-                                routeStops.push({ ...stopInfo, routeDir: dirText, seq: item.seq });
-                            }
-                        });
-                    }
-                };
-
-                processStops(kOut, 'kmb', '去程 (Outbound)');
-                processStops(cOut, 'ctb', '去程 (Outbound)');
-                processStops(kIn, 'kmb', '回程 (Inbound)');
-                processStops(cIn, 'ctb', '回程 (Inbound)');
-
-                if (routeStops.length === 0) {
-                    showError(`找不到路線 ${route} 的車站資料，請檢查巴士號碼是否正確。`);
-                    return;
-                }
-
-                // Sort properly by direction and then sequence
-                routeStops.sort((a, b) => {
-                    if (a.routeDir !== b.routeDir) return a.routeDir.localeCompare(b.routeDir);
-                    return a.seq - b.seq;
-                });
-
-                renderRouteStops(route, routeStops);
-
-            } catch (err) {
-                console.error(err);
-                showError("搜尋時發生錯誤，請稍後再試。");
-            }
-        }
-
-        function renderRouteStops(route, stops) {
-            UI.loading.classList.add('hidden');
-            UI.loading.classList.remove('flex');
-            UI.results.classList.remove('hidden');
-            UI.results.classList.add('flex');
-            UI.homeBtn.classList.remove('hidden');
-
-            UI.stopCount.innerText = `路線 ${route} - 點擊查看即時到站`;
-            UI.stopsList.innerHTML = '';
-            
-            let currentDir = '';
-            
-            stops.forEach(stop => {
-                if (stop.routeDir !== currentDir) {
-                    currentDir = stop.routeDir;
-                    const dirHeader = document.createElement('div');
-                    dirHeader.className = "font-bold text-white bg-blue-600 p-2.5 rounded-lg mt-4 text-sm shadow-md flex items-center gap-2 sticky top-[72px] z-10 backdrop-blur-sm bg-opacity-95";
-                    dirHeader.innerHTML = `<i data-lucide="arrow-right-circle" class="w-4 h-4"></i> ${currentDir}`;
-                    UI.stopsList.appendChild(dirHeader);
-                }
-
-                const isKmb = stop.agency === 'kmb';
-                let badgeColor = isKmb ? 'bg-red-600 text-white' : 'bg-yellow-400 text-blue-900';
-                let badgeText = isKmb ? '九巴 / 龍運' : '城巴 (CTB)';
-
-                const el = document.createElement('div');
-                el.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer hover:shadow-md transition-shadow active:bg-gray-50 ml-2 border-l-4 " + (isKmb ? "border-l-red-500" : "border-l-yellow-400");
-                el.innerHTML = `
-                    <div class="flex items-center gap-4 overflow-hidden w-full">
-                        <div class="flex flex-col items-center justify-center min-w-[2.5rem]">
-                            <span class="text-xs font-bold text-gray-400">第</span>
-                            <span class="text-xl font-bold text-gray-800 leading-none">${stop.seq}</span>
-                            <span class="text-xs font-bold text-gray-400">站</span>
-                        </div>
-                        <div class="min-w-0 flex-grow border-l pl-3 border-gray-100">
-                            <div class="flex items-center gap-2 mb-0.5">
-                                <span class="${badgeColor} text-[9px] font-bold px-1.5 py-0.5 rounded-sm uppercase">${badgeText}</span>
-                            </div>
-                            <h4 class="font-bold text-gray-800 truncate text-base leading-tight">${stop.name_tc}</h4>
-                            <h5 class="text-xs text-gray-400 font-medium truncate">${stop.name_en}</h5>
-                        </div>
-                        <div class="text-blue-500 pl-2 flex flex-col items-center justify-center bg-blue-50 p-2 rounded-lg">
-                            <i data-lucide="clock" class="w-5 h-5 mb-0.5"></i>
-                            <span class="text-[9px] font-bold">預計</span>
-                        </div>
-                    </div>
-                `;
-                el.addEventListener('click', () => openLiveETA(stop));
-                UI.stopsList.appendChild(el);
-            });
-            
-            lucide.createIcons();
-            updateMapRouteMode(stops);
-        }
-
-        function updateMapRouteMode(stops) {
-            if (!map) {
-                map = L.map('map', { zoomControl: false }).setView([22.3193, 114.1694], 11);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; OpenStreetMap',
-                    subdomains: 'abcd',
-                    maxZoom: 19
-                }).addTo(map);
-            }
-            
-            if (userMarker && map.hasLayer(userMarker)) {
-                map.removeLayer(userMarker);
-            }
-            stopMarkers.forEach(m => map.removeLayer(m));
-            stopMarkers = [];
-            
-            if (window.routeLine) {
-                map.removeLayer(window.routeLine);
-            }
-
-            const bounds = L.latLngBounds();
-            const latlngs = [];
-
-            stops.forEach(stop => {
-                let pinColor = stop.agency === 'kmb' ? '#ef4444' : '#facc15';
-                
-                const stopIcon = L.divIcon({
-                    className: 'custom-div-icon',
-                    html: `<div style="background-color:${pinColor}; width:10px; height:10px; border-radius:50%; border:2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>`,
-                    iconSize: [10, 10], iconAnchor: [5, 5]
-                });
-
-                const stopLon = stop.long || stop.longitude;
-                const marker = L.marker([stop.lat, stopLon], {icon: stopIcon}).addTo(map);
-                
-                marker.bindPopup(`<b>${stop.name_tc}</b><br>第 ${stop.seq} 站`);
-                marker.on('click', () => openLiveETA(stop));
-                stopMarkers.push(marker);
-                
-                latlngs.push([stop.lat, stopLon]);
-                bounds.extend([stop.lat, stopLon]);
-            });
-
-            window.routeLine = L.polyline(latlngs, {color: '#3b82f6', weight: 4, opacity: 0.6}).addTo(map);
-
-            setTimeout(() => { map.fitBounds(bounds, { padding: [20, 20], maxZoom: 16 }); }, 100);
-        }
-
         async function processHKData() {
             try {
                 showLoading("同步香港交通數據庫...", "下載巴士、港鐵及輕鐵資料");
 
-                await ensureStopsDataLoaded();
+                let kmbReq = kmbStopsData ? Promise.resolve(kmbStopsData) : 
+                    fetchWithTimeout('https://data.etabus.gov.hk/v1/transport/kmb/stop')
+                    .then(res => res.json())
+                    .then(data => data.data.map(s => ({...s, agency: 'kmb'})))
+                    .catch(err => { console.error("KMB error", err); return []; });
+
+                // 城巴 CTB API (V2.01 Data Dictionary)
+                let ctbReq = ctbStopsData ? Promise.resolve(ctbStopsData) : 
+                    fetchWithTimeout('https://rt.data.gov.hk/v2/transport/citybus/stop')
+                    .then(res => res.json())
+                    .then(data => data.data.map(s => ({...s, agency: 'ctb'})))
+                    .catch(err => { console.error("CTB error", err); return []; });
+
+                // 平行下載巴士資料
+                let [kmbRes, ctbRes] = await Promise.all([kmbReq, ctbReq]);
+                
+                kmbStopsData = kmbRes;
+                ctbStopsData = ctbRes;
 
                 // 合併 城巴 + 九巴 + 港鐵重鐵 + 港鐵輕鐵 陣列
                 const allStops = [...ctbStopsData, ...kmbStopsData, ...mtrStopsData, ...lrtStopsData];
@@ -744,7 +574,7 @@
             UI.loading.classList.remove('flex');
             UI.results.classList.remove('hidden');
             UI.results.classList.add('flex');
-            UI.homeBtn.classList.remove('hidden');
+            UI.refreshBtn.classList.remove('hidden');
 
             UI.stopCount.innerText = `顯示最近 ${nearbyStops.length} 個車站`;
             UI.stopsList.innerHTML = '';
@@ -767,7 +597,7 @@
                     badgeText = '輕鐵 (LRT)';
                     iconColor = 'text-orange-600';
                     iconBg = 'bg-orange-100';
-                    iconName = 'tram-front'; // using tram-front for LRT
+                    iconName = 'tram-front';
                 } else if (isKmb) {
                     badgeColor = 'bg-red-600 text-white';
                     badgeText = '九巴 / 龍運';
@@ -854,7 +684,6 @@
                 if (isMtr) {
                     apiUrl = `https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${stop.line}&sta=${stop.sta}`;
                 } else if (isLrt) {
-                    // 根據 Light Rail Next Train API v1.2 設定 URL (包含特車 with_special=1)
                     apiUrl = `https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=${stop.sta}&with_special=1`;
                 } else if (isKmb) {
                     apiUrl = `https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stop.stop}`;
@@ -868,7 +697,7 @@
                 
                 const routesMap = {};
                 const now = new Date();
-                let latestTimestampStr = json.curr_time || json.system_time || ""; // Fallback for MTR / LRT time
+                let latestTimestampStr = json.curr_time || json.system_time || "";
 
                 if (isMtr) {
                     const lineData = json.data[`${stop.line}-${stop.sta}`];
@@ -895,7 +724,7 @@
                                         const etaTime = new Date(train.time.replace(' ', 'T'));
                                         let mins = Math.floor((etaTime - now) / 60000);
                                         if (mins < 0) mins = 0;
-                                        routesMap[routeKey].times.push({ mins: mins, rmk: "" });
+                                        routesMap[routeKey].times.push({ mins: mins, rmk: "", time_ch: `${mins}分鐘` });
                                     }
                                 });
                             }
@@ -907,18 +736,15 @@
                             const platId = plat.platform_id;
                             if (plat.route_list) {
                                 plat.route_list.forEach(train => {
-                                    // 判斷是否為特車 (v1.2 Data Dictionary 規則)
                                     const routeNo = train.special === 1 ? (train.additionalInfo1 || "Special") : train.route_no;
                                     const destTc = train.dest_ch;
                                     const destEn = train.dest_en;
-                                    
-                                    // 用平台和路線來分類
                                     const routeKey = `LRT-${routeNo}-${destTc}-${platId}`;
 
                                     if (!routesMap[routeKey]) {
                                         routesMap[routeKey] = {
                                             route: routeNo,
-                                            routeColor: '#f97316', // tailwind orange-500
+                                            routeColor: '#f97316',
                                             dest_tc: destTc,
                                             dest_en: destEn,
                                             times: [],
@@ -926,30 +752,28 @@
                                         };
                                     }
 
-                                    // 處理到達時間 (直接使用官方 time_ch)
                                     let sortMins = 0;
-                                    const timeCh = train.time_ch || "";
+                                    const tStr = (train.time_en || "").toLowerCase();
+                                    const timeCh = train.time_ch || "-";
                                     
-                                    if (timeCh.includes(":")) {
-                                        const [hh, mm] = timeCh.split(':').map(Number);
+                                    if (tStr.includes(":")) {
+                                        const [hh, mm] = tStr.split(':').map(Number);
                                         const etaDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0);
                                         sortMins = Math.floor((etaDate - now) / 60000);
-                                        // 處理跨日問題 (例如午夜 23:59 到 00:05)
                                         if (sortMins < -700) sortMins += 1440; 
                                         if (sortMins < 0) sortMins = 0;
                                     }
 
                                     routesMap[routeKey].times.push({
-                                        mins: sortMins, // 保留 mins 作為排序用途
-                                        time_ch: timeCh, // 儲存官方原始文字顯示
-                                        rmk: `月台 ${platId} • ${train.train_length}卡` // 顯示月台與車廂長度
+                                        mins: sortMins,
+                                        time_ch: timeCh,
+                                        rmk: `月台 ${platId} • ${train.train_length}卡`
                                     });
                                 });
                             }
                         });
                     }
                 } else {
-                    // 城巴 / 九巴 ETA 解析
                     const validEtas = json.data.filter(item => item.eta !== null && item.eta !== "");
                     validEtas.forEach(etaObj => {
                         if (etaObj.data_timestamp && etaObj.data_timestamp > latestTimestampStr) {
@@ -972,12 +796,12 @@
                         
                         routesMap[routeKey].times.push({
                             mins: mins,
+                            time_ch: mins === 0 ? "即將到達" : `${mins}分鐘`,
                             rmk: etaObj.rmk_tc || ""
                         });
                     });
                 }
 
-                // 更新最後更新時間 UI
                 if (latestTimestampStr) {
                     try {
                         const tsDate = new Date(latestTimestampStr.replace(' ', 'T'));
@@ -989,7 +813,6 @@
                     UI.modalTimestamp.innerText = `實時數據運作中`;
                 }
 
-                // 排序：最快到達的路線排最上面
                 const routeList = Object.values(routesMap).map(r => {
                     r.times.sort((a,b) => a.mins - b.mins);
                     return r;
@@ -1022,25 +845,17 @@
                 const el = document.createElement('div');
                 el.className = "flex flex-col bg-white p-3 rounded-xl border border-gray-200 shadow-sm";
                 
-                // 渲染時間區塊
                 const timeBadges = route.times.slice(0, 3).map((timeObj, idx) => {
-                    const { mins, rmk, time_ch } = timeObj;
+                    const { time_ch, rmk } = timeObj;
                     const isFirst = idx === 0;
                     
                     let timeText;
-                    if (time_ch) {
-                        // 輕鐵顯示模式 (直接使用 time_ch)
-                        if (time_ch === "即將抵達" || time_ch === "正在離開" || time_ch === "-") {
-                            const showText = time_ch === "-" ? "即將抵達" : time_ch;
-                            timeText = `<span class="text-red-600 font-bold text-base animate-pulse whitespace-nowrap">${showText}</span>`;
-                        } else {
-                            timeText = `<span class="${isFirst ? 'text-gray-800' : 'text-gray-500'} font-bold text-lg leading-none tracking-wide">${time_ch}</span>`;
-                        }
+                    if (time_ch === "即將抵達" || time_ch === "正在離開" || time_ch === "即將到達") {
+                        timeText = `<span class="text-red-600 font-bold text-base animate-pulse whitespace-nowrap">${time_ch}</span>`;
+                    } else if (time_ch === "-") {
+                        timeText = `<span class="text-gray-500 font-bold text-base">-</span>`;
                     } else {
-                        // 巴士與港鐵重鐵顯示模式 (倒數分鐘)
-                        timeText = mins === 0 
-                            ? `<span class="text-red-600 font-bold text-lg animate-pulse whitespace-nowrap">即將到達</span>` 
-                            : `<span class="${isFirst ? 'text-gray-800' : 'text-gray-500'} font-bold text-lg leading-none">${mins}<span class="text-xs font-normal ml-0.5">分鐘</span></span>`;
+                        timeText = `<span class="${isFirst ? 'text-gray-800' : 'text-gray-500'} font-bold text-lg leading-none tracking-wide">${time_ch}</span>`;
                     }
                     
                     let rmkHtml = rmk 
@@ -1094,15 +909,7 @@
                     subdomains: 'abcd',
                     maxZoom: 19
                 }).addTo(map);
-            } else {
-                map.setView([userLocation.lat, userLocation.lon], 16);
-            }
 
-            if (window.routeLine) {
-                map.removeLayer(window.routeLine);
-            }
-
-            if (!userMarker) {
                 const userIcon = L.divIcon({
                     className: 'custom-div-icon',
                     html: `<div class="pulse-dot"></div>`,
@@ -1110,20 +917,19 @@
                 });
                 userMarker = L.marker([userLocation.lat, userLocation.lon], {icon: userIcon, zIndexOffset: 1000}).addTo(map);
             } else {
+                map.setView([userLocation.lat, userLocation.lon], 16);
                 userMarker.setLatLng([userLocation.lat, userLocation.lon]);
-                if (!map.hasLayer(userMarker)) map.addLayer(userMarker);
+                stopMarkers.forEach(m => map.removeLayer(m));
+                stopMarkers = [];
             }
-            
-            stopMarkers.forEach(m => map.removeLayer(m));
-            stopMarkers = [];
 
             const bounds = L.latLngBounds([userLocation.lat, userLocation.lon]);
 
             nearbyStops.forEach(stop => {
-                let pinColor = '#facc15'; // 城巴黃
-                if (stop.agency === 'kmb') pinColor = '#ef4444'; // 九巴紅
-                if (stop.agency === 'mtr') pinColor = '#1F2937'; // 港鐵深灰
-                if (stop.agency === 'lrt') pinColor = '#f97316'; // 輕鐵橙
+                let pinColor = '#facc15';
+                if (stop.agency === 'kmb') pinColor = '#ef4444';
+                if (stop.agency === 'mtr') pinColor = '#1F2937';
+                if (stop.agency === 'lrt') pinColor = '#f97316';
                 
                 const stopIcon = L.divIcon({
                     className: 'custom-div-icon',
@@ -1157,7 +963,7 @@
             UI.error.classList.add('hidden');
             UI.initial.classList.add('hidden');
             UI.results.classList.add('hidden');
-            UI.homeBtn.classList.add('hidden');
+            UI.refreshBtn.classList.add('hidden');
             UI.loading.classList.remove('hidden');
             UI.loading.classList.add('flex');
             UI.loadingText.innerText = mainText;
@@ -1167,7 +973,7 @@
         function showError(msg) {
             UI.loading.classList.add('hidden');
             UI.loading.classList.remove('flex');
-            UI.initial.classList.remove('hidden');
+            UI.initial.classList.add('hidden');
             UI.error.innerText = msg;
             UI.error.classList.remove('hidden');
         }
