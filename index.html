@@ -111,6 +111,17 @@
             </button>
             <div id="locationError" class="text-red-500 mt-4 text-sm hidden font-medium bg-red-50 p-3 rounded-lg border border-red-100"></div>
 
+            <!-- 路線搜尋 -->
+            <div class="w-full max-w-sm mt-5">
+                <div class="flex gap-2">
+                    <input type="text" id="routeSearchInput" placeholder="搜尋巴士路線 (例: 968)" class="flex-grow px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm uppercase font-medium">
+                    <button id="routeSearchBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl shadow-sm transition-colors font-semibold flex items-center justify-center min-w-[5rem]">
+                        <span>搜尋</span>
+                    </button>
+                </div>
+                <div id="routeSearchResult" class="w-full flex flex-col gap-2 text-left hidden mt-3 bg-white p-2 rounded-xl shadow-inner border border-gray-200 max-h-64 overflow-y-auto"></div>
+            </div>
+
             <!-- 分隔線 -->
             <div class="w-full max-w-sm flex items-center gap-4 my-6">
                 <div class="h-px bg-gray-300 flex-grow"></div>
@@ -419,6 +430,9 @@
             btnAffluence: document.getElementById('btnAffluence'),
             btnNganWai: document.getElementById('btnNganWai'),
             error: document.getElementById('locationError'),
+            routeSearchInput: document.getElementById('routeSearchInput'),
+            routeSearchBtn: document.getElementById('routeSearchBtn'),
+            routeSearchResult: document.getElementById('routeSearchResult'),
             loadingText: document.getElementById('loadingText'),
             loadingSubText: document.getElementById('loadingSubText'),
             stopsList: document.getElementById('stopsList'),
@@ -471,6 +485,11 @@
         UI.btnNganWai.addEventListener('click', () => {
             const staData = LRT_STATIONS["230"];
             openLiveETA({ agency: 'lrt', sta: '230', name_tc: staData.tc, name_en: staData.en });
+        });
+
+        UI.routeSearchBtn.addEventListener('click', () => handleRouteSearch(UI.routeSearchInput.value));
+        UI.routeSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleRouteSearch(UI.routeSearchInput.value);
         });
 
         UI.closeModal.addEventListener('click', () => UI.modal.classList.add('hidden'));
@@ -973,9 +992,101 @@
         function showError(msg) {
             UI.loading.classList.add('hidden');
             UI.loading.classList.remove('flex');
-            UI.initial.classList.add('hidden');
+            UI.initial.classList.remove('hidden');
             UI.error.innerText = msg;
             UI.error.classList.remove('hidden');
+        }
+
+        async function handleRouteSearch(route) {
+            route = route.trim().toUpperCase();
+            if (!route) return;
+
+            UI.routeSearchBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-5 h-5 text-white"></i>';
+            lucide.createIcons();
+            UI.routeSearchResult.classList.remove('hidden');
+            UI.routeSearchResult.innerHTML = '<div class="text-center text-sm text-gray-500 py-6"><i data-lucide="search" class="w-6 h-6 mx-auto mb-2 text-gray-300"></i>正在獲取路線資料...</div>';
+            lucide.createIcons();
+
+            // 確保已載入巴士站主資料庫
+            if (!kmbStopsData || !ctbStopsData) {
+                try {
+                    let kmbReq = kmbStopsData ? Promise.resolve(kmbStopsData) : fetchWithTimeout('https://data.etabus.gov.hk/v1/transport/kmb/stop').then(r=>r.json()).then(d=>d.data.map(s=>({...s, agency: 'kmb'}))).catch(()=>[]);
+                    let ctbReq = ctbStopsData ? Promise.resolve(ctbStopsData) : fetchWithTimeout('https://rt.data.gov.hk/v2/transport/citybus/stop').then(r=>r.json()).then(d=>d.data.map(s=>({...s, agency: 'ctb'}))).catch(()=>[]);
+                    let [kmbRes, ctbRes] = await Promise.all([kmbReq, ctbReq]);
+                    kmbStopsData = kmbRes;
+                    ctbStopsData = ctbRes;
+                } catch(e) {
+                    console.error("載入車站失敗", e);
+                }
+            }
+
+            let foundStops = [];
+
+            // 查詢九巴路線
+            try {
+                const kmbIn = await fetchWithTimeout(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/inbound/1`).then(r=>r.json()).catch(()=>null);
+                const kmbOut = await fetchWithTimeout(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${route}/outbound/1`).then(r=>r.json()).catch(()=>null);
+                
+                const processKmb = (res, dir) => {
+                    if(res && res.data && res.data.length > 0) {
+                        res.data.forEach(rs => {
+                            const stopInfo = kmbStopsData.find(s => s.stop === rs.stop);
+                            if(stopInfo) foundStops.push({...stopInfo, routeDir: dir, seq: rs.seq});
+                        });
+                    }
+                };
+                processKmb(kmbIn, 'inbound');
+                processKmb(kmbOut, 'outbound');
+            } catch(e) {}
+
+            // 查詢城巴路線
+            try {
+                const ctbIn = await fetchWithTimeout(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/route-stop/ctb/${route}/inbound`).then(r=>r.json()).catch(()=>null);
+                const ctbOut = await fetchWithTimeout(`https://rt.data.gov.hk/v1/transport/citybus-nwfb/route-stop/ctb/${route}/outbound`).then(r=>r.json()).catch(()=>null);
+                
+                const processCtb = (res, dir) => {
+                    if(res && res.data && res.data.length > 0) {
+                        res.data.forEach((rs, index) => {
+                            const stopInfo = ctbStopsData.find(s => s.stop === rs.stop);
+                            if(stopInfo) foundStops.push({...stopInfo, routeDir: dir, seq: index + 1});
+                        });
+                    }
+                };
+                processCtb(ctbIn, 'inbound');
+                processCtb(ctbOut, 'outbound');
+            } catch(e) {}
+
+            UI.routeSearchBtn.innerHTML = '<span>搜尋</span>';
+
+            if (foundStops.length === 0) {
+                UI.routeSearchResult.innerHTML = '<div class="text-center text-sm text-red-500 py-4">找不到路線資料，請檢查號碼是否正確。</div>';
+                return;
+            }
+
+            UI.routeSearchResult.innerHTML = `<h3 class="font-bold text-gray-700 text-sm mb-2 px-1 sticky top-0 bg-white pt-1 pb-2 z-10 border-b border-gray-100">路線 ${route} 沿途車站</h3>`;
+            
+            foundStops.forEach(stop => {
+                const isKmb = stop.agency === 'kmb';
+                const badgeColor = isKmb ? 'bg-red-600 text-white' : 'bg-yellow-400 text-blue-900';
+                const agencyName = isKmb ? '九巴' : '城巴';
+                const dirName = stop.routeDir === 'outbound' ? '去程' : '回程';
+                
+                const el = document.createElement('button');
+                el.className = "w-full text-left bg-gray-50 p-3 rounded-lg border border-gray-200 hover:bg-gray-100 flex items-center gap-3 transition-colors mb-2";
+                el.innerHTML = `
+                    <div class="flex-grow min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="${badgeColor} text-[9px] font-bold px-1.5 py-0.5 rounded-sm">${agencyName} ${dirName}</span>
+                            <span class="text-xs text-gray-400 font-medium">第 ${stop.seq} 站</span>
+                        </div>
+                        <h4 class="font-bold text-gray-800 text-sm truncate">${stop.name_tc}</h4>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
+                `;
+                el.addEventListener('click', () => openLiveETA(stop));
+                UI.routeSearchResult.appendChild(el);
+            });
+            lucide.createIcons();
         }
     </script>
 </body>
